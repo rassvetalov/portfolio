@@ -60,6 +60,10 @@ I also write **NDA-safe custom tooling** (exporters/services) to close gaps in A
 - `links.md`
 - Open-source: `https://github.com/electrolux-oss/aws-cost-exporter/pull/50`
 
+## Featured
+
+- One-pager (Platform/DevOps Lead): `one-pagers/Platform_Lead_OnePager.md` (PDF planned)
+
 ## GitHub Pages
 
 This repo is ready to be used as a simple GitHub Pages landing page.

@@ -7,6 +7,11 @@
 - **English (PDF, TODO)**: `assets/CV_Dmitriy_Rassvetalov_EN.pdf`
 - **English (DOCX, TODO)**: `assets/CV_Dmitriy_Rassvetalov_EN.docx`
 
+## One-pager
+
+- **Platform/DevOps Lead (MD)**: `one-pagers/Platform_Lead_OnePager.md`
+- **Platform/DevOps Lead (PDF, TODO)**: `one-pagers/Platform_Lead_OnePager.pdf`
+
 ## LinkedIn
 
 - `https://linkedin.com/in/dmitriy-rassvetalov-92297458`
