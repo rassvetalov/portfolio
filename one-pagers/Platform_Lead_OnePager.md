@@ -1,42 +1,28 @@
----
-title: "One-pager — Platform/DevOps Lead (NDA-safe)"
----
+# Дмитрий Рассветалов
 
-# One-pager — Platform/DevOps Lead / SRE (NDA-safe)
+**Platform / DevOps Lead (AWS/EKS) · SRE**  
+Limassol, Cyprus  
++357 99043151  |  vstahanov@gmail.com  
 
-**Dmitriy Rassvetalov**  
-AWS · Kubernetes (EKS) · Terraform · Observability · FinOps automation
+**Links:** [LinkedIn](https://linkedin.com/in/dmitriy-rassvetalov-92297458) · [GitHub](https://github.com/rassvetalov) · [OSS PR](https://github.com/electrolux-oss/aws-cost-exporter/pull/50)
 
-## Summary (3–5 lines)
+## Summary
+- Senior platform engineer with 20+ years in operations, networking and cloud.
+- Recent scope: AWS + Kubernetes (EKS) platform spanning 30+ clusters (`<prod>/<stage>/<test>`).
 
-Platform/DevOps Lead focused on AWS/EKS platforms at scale (**30+ clusters**) across `<prod>/<stage>/<test>`.
-Core themes: platform networking & service publishing, PR-driven self-service provisioning, observability standards/guardrails, and cost optimization automation.
+## Highlights
+- Service publishing via Cloudflare Zero Trust: access lead time 1–2 days → 1–2 hours; ~30% less manual work.
+- Developer self-service provisioning (GitHub + Atlantis + Terraform modules): 1–2 days → 30–60 minutes; tickets -30–40%.
+- FinOps automation for perf: Cloud Custodian in EKS (safe mark-for-op workflow); ~20–35% monthly savings.
+- Observability: VictoriaMetrics/Prometheus/Grafana + guardrails (cardinality & heavy-query controls); triage ~20–25% faster, alert noise -20–30%.
 
-## Scope
+## Selected projects
+**EKS platform networking @ 30+ clusters** — Owned service exposure, DNS and ingress/egress patterns; integrated observability and operational standards.
+**FinOps automation (Cloud Custodian + EKS + extensions)** — CronJobs daily/weekly → S3 reports + Slack; custom plugin for DynamoDB GSI throughput; webhook service for ElastiCache RG minimize/delete.
+**Production observability and logging @ scale** — Graphite/Carbon (6 nodes, ~60TB) → VictoriaMetrics integration; Grafana HA (3 replicas, LDAP); Fluentd aggregator (50+ log types, 700+ routes, HPA 1–30).
 
-- AWS, multi-`<account>` / multi-`<region>`
-- EKS platform networking (ingress/egress, DNS integration, private access patterns)
-- IaC: Terraform modules + PR workflows (GitHub + Atlantis)
-- Observability: Prometheus/VictoriaMetrics/Grafana + alert standards
-- FinOps automation for perf/non-prod with safety lifecycle (`mark-for-op → grace period → action`)
+## Tech stack
+AWS (EKS, RDS Aurora, DynamoDB, Kinesis, S3, CloudFront, ElastiCache, OpenSearch, Route53, TGW) · Terraform/Terragrunt · Helm/Helmfile · ArgoCD · GitHub Actions · Atlantis · Prometheus/VictoriaMetrics/Grafana · Fluentd/Fluent Bit/Vector · Python/Go/Bash
 
-## Highlights (selected)
-
-- **Zero Trust publishing**: reduced access lead time from **1–2 business days to 1–2 hours**, manual work down by **~30%**
-- **Self-service provisioning**: typical requests **~30–60 min vs 1–2 days**, routine DevOps tickets down by **~30–40%**
-- **Observability guardrails**: triage speed **~20–25%** faster, alert noise **~20–30%** lower
-- **FinOps automation**: **~20–35% monthly savings** in perf environments (range)
-
-## Portfolio
-
-- Repo overview: `../README.md`
-- Case studies: `../case-studies/`
-- Articles: `../docs/articles/`
-
-## Contact
-
-- Email: `vstahanov@gmail.com`
-- LinkedIn: `https://linkedin.com/in/dmitriy-rassvetalov-92297458`
-
-> TODO: replace this stub with your finalized one-pager content.
-
+## Leadership
+Team Lead experience: managed 7 engineers (planning, prioritization, incident management, postmortems).
