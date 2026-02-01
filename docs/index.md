@@ -15,6 +15,18 @@ Focus areas: platform networking/service publishing, self-service infrastructure
 - GitHub: `https://github.com/rassvetalov`
 - Repo: `https://github.com/rassvetalov/portfolio`
 
+## Articles (drafts)
+
+- [FinOps automation with Cloud Custodian on Kubernetes](articles/finops-custodian)
+- [Designing a safe mark-for-op lifecycle](articles/mark-for-op-lifecycle)
+- [EKS networking patterns at scale](articles/eks-networking-patterns)
+- [EKS service exposure patterns](articles/eks-service-exposure)
+- [Observability guardrails (cardinality & heavy queries)](articles/observability-guardrails)
+- [Practical alert standards](articles/alert-standards)
+- [Zero Trust service publishing](articles/zero-trust-publishing)
+- [PR-driven IaC with Atlantis](articles/atlantis-iac-workflow)
+- [Custom Prometheus exporters (patterns)](articles/custom-exporters)
+
 ## What you can read here
 
 - Overview: `https://github.com/rassvetalov/portfolio/blob/main/README.md`
