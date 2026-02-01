@@ -20,12 +20,17 @@ DevOps/Platform engineer with **20+ years** of experience (operations, networkin
 ## Key achievements
 
 - **EKS platform @ scale (30+ clusters):** owned platform networking and adjacent subsystems (service exposure, DNS, ingress/egress, observability integrations) across `<prod>/<stage>/<test>`.
-- **Cloudflare Zero Trust service publishing:** designed and implemented a standardized access model (applications/policies + DNS integration). Reduced secure access lead time from **1–2 business days to 1–2 hours**, reduced manual operations by **~30%**.
+- **Cloudflare Zero Trust service publishing:** designed and implemented a standardized access model (applications/policies + DNS integration). Reduced secure access lead time from **1–2 business days to 10–15 minutes** (for standard onboarding), reduced manual operations by **~30%**.
 - **Self-service provisioning (GitHub + Atlantis):** established a PR-driven provisioning model where engineers declare infrastructure and Atlantis applies Terraform changes. My contribution: production-ready Terraform modules for AWS and Cloudflare Zero Trust. Typical requests completed in **~30–60 minutes vs 1–2 days**, routine DevOps tickets reduced by **~30–40%**.
 - **FinOps automation for perf environments:** implemented cost optimization using **Cloud Custodian** executed via **EKS CronJobs** (`daily/weekly`), with reports in object storage and Slack notifications via queue + mailer. Safety: **dry-run**, protection tags, and **`mark-for-op → grace period → action`** workflow. Savings: **~20–35% per month** (perf environments), fewer “forgotten” resources.
 - **Closing provider gaps with custom tooling:** delivered custom extensions where “out of the box” tooling was not enough (e.g., custom plugin for DynamoDB GSI throughput operations; webhook API on FastAPI for unsupported actions such as some ElastiCache replication group operations), with metrics, validation, and safe defaults.
 - **Observability standards (VictoriaMetrics/Prometheus/Grafana):** centralized metrics, standardized dashboards/alerts, introduced cardinality limits and control of “heavy” queries. Result: faster triage (**~20–25%**) and less alert noise (**~20–30%**).
+- **Production monitoring stack (Graphite/Carbon → VictoriaMetrics):** designed and deployed a metrics platform including a **6-node go-carbon cluster** (~**60TB** storage), CarbonAPI gateway, and Grafana HA (**3 replicas**) with LDAP and unified alerting.
+- **Custom Prometheus exporters (Go/Python):** exporters to cover AWS metrics gaps (DynamoDB warm capacity, Kinesis shards, Service Quotas; ElastiCache baseline bandwidth/capabilities; OSIS pipelines with TTL cache and rate limiting).
+- **Terraform module library (production-ready):** authored modules for account/networking/databases/app resources and endpoint monitoring (NDA-safe summary).
+- **Nomad → EKS migration (as part of the team):** scope: networking and adjacent cluster subsystems; helped reduce migration risk for engineering teams.
 - **Open-source contribution:** upstream PR to **aws-cost-exporter** — https://github.com/electrolux-oss/aws-cost-exporter/pull/50 — improved cost metric export/filtering for dashboards/alerting; reporting preparation improved from **~1–2 hours to 15–30 minutes**.
+- **Automation/tooling:** 1000+ scripts/utilities for AWS/EKS, DB ops, monitoring, DR/backup, and provisioning (Packer/Ansible/SaltStack).
 
 ---
 
@@ -36,9 +41,10 @@ DevOps/Platform engineer with **20+ years** of experience (operations, networkin
 **Senior DevOps Engineer** · Oct 2022 — Present
 
 - Owned networking and adjacent subsystems for an EKS platform of **30+ clusters** (`<prod>/<stage>/<test>`): service exposure, DNS, ingress/egress, observability integrations.
-- Designed and rolled out Cloudflare Zero Trust service publishing with standardized patterns and operational practices; reduced access lead time to **1–2 hours**.
+- Designed and rolled out Cloudflare Zero Trust service publishing with standardized patterns and operational practices; reduced access lead time to **10–15 minutes** (standard onboarding).
 - Built self-service provisioning (GitHub + Atlantis): Terraform modules, validation, and a “contract” for engineers; typical provisioning **~30–60 minutes**.
 - Improved observability (VictoriaMetrics/Prometheus/Grafana): standards, cardinality guardrails, heavy query control; reduced noise and improved incident triage.
+- Designed and operated a production metrics stack bridging legacy and modern systems (Graphite/Carbon → VictoriaMetrics), including query gateway and Grafana HA.
 - Implemented FinOps automation: Cloud Custodian workflows running in EKS with reports + notifications; added extensions (plugin + webhook) where required.
 - Contributed to migration work (Nomad → EKS) as part of the team, focusing on networking and adjacent platform subsystems.
 

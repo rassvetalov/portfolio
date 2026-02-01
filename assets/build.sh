@@ -17,7 +17,7 @@ IMAGE="pandoc/latex:latest"
 PDF_FLAGS=(
   "--pdf-engine=xelatex"
   "-V" "fontsize=10pt"
-  "-V" "geometry:margin=0.7in"
+  "-V" "geometry:margin=0.6in"
   "--include-in-header=pandoc-header.tex"
 )
 
