@@ -23,6 +23,7 @@
 
 - **TODO**: [FinOps automation with Cloud Custodian on Kubernetes](docs/articles/finops-custodian.md)
 - **TODO**: [Designing a safe `mark-for-op → grace period → action` lifecycle](docs/articles/mark-for-op-lifecycle.md)
+- **TODO**: [Performance account cost control: warm-up/cool-down + watchdog + cost visibility](docs/articles/perf-account-cost-control.md)
 - **TODO**: [EKS networking patterns at scale](docs/articles/eks-networking-patterns.md)
 - **TODO**: [EKS service exposure patterns: ingress/egress, DNS, private access (NDA-safe)](docs/articles/eks-service-exposure.md)
 - **TODO**: [Observability guardrails: cardinality control and “heavy query” hygiene](docs/articles/observability-guardrails.md)

@@ -12,6 +12,7 @@ All articles are **NDA-safe**: placeholders like `<cluster>`, `<account>`, `<env
 - [EKS service exposure patterns](eks-service-exposure)
 - [Observability guardrails (cardinality & heavy queries)](observability-guardrails)
 - [Practical alert standards](alert-standards)
+- [Performance account cost control (warm-up/cool-down + watchdog)](perf-account-cost-control)
 - [Zero Trust service publishing](zero-trust-publishing)
 - [PR-driven IaC with Atlantis](atlantis-iac-workflow)
 - [Custom Prometheus exporters (patterns)](custom-exporters)

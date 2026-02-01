@@ -23,6 +23,7 @@ Focus areas: platform networking/service publishing, self-service infrastructure
 - [EKS service exposure patterns](articles/eks-service-exposure)
 - [Observability guardrails (cardinality & heavy queries)](articles/observability-guardrails)
 - [Practical alert standards](articles/alert-standards)
+- [Performance account cost control (warm-up/cool-down + watchdog)](articles/perf-account-cost-control)
 - [Zero Trust service publishing](articles/zero-trust-publishing)
 - [PR-driven IaC with Atlantis](articles/atlantis-iac-workflow)
 - [Custom Prometheus exporters (patterns)](articles/custom-exporters)
