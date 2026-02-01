@@ -3,17 +3,19 @@
 **Platform / DevOps Lead · SRE**  
 AWS · Kubernetes (EKS) · Terraform · Observability · FinOps automation  
 Limassol, Cyprus · +357 99043151 · vstahanov@gmail.com  
-LinkedIn: https://linkedin.com/in/dmitriy-rassvetalov-92297458  
-GitHub: https://github.com/rassvetalov  
-OSS PR: https://github.com/electrolux-oss/aws-cost-exporter/pull/50
+LinkedIn: https://linkedin.com/in/dmitriy-rassvetalov-92297458 · GitHub: https://github.com/rassvetalov
 
-> Public / NDA-safe: no internal domains/IDs/team names/topology/bucket names/VPC identifiers.
+> Public / NDA-safe note: this CV is intended for a public repository. It contains no internal domains, IDs, team/service names, exact topology, bucket names, or VPC/subnet identifiers.
+
+---
 
 ## Profile
 
-DevOps/Platform engineer with **20+ years** in operations, networking, infrastructure, and cloud. Recent focus: **AWS**, **EKS**, **Terraform**, **CI/CD**, observability, reliability, and platform automation. Team leadership experience with strong ownership mindset.
+DevOps/Platform engineer with **20+ years** of experience (operations, networking, infrastructure, cloud). In recent years I focus on **AWS**, **Kubernetes (EKS)**, **IaC (Terraform/Terragrunt)**, **CI/CD**, **observability**, reliability, and platform automation. I have team leadership experience and strong ownership mindset (prioritization, incident management, and collaboration with engineering teams).
 
 **Scope:** a platform of **30+ EKS clusters** across `<prod>/<stage>/<test>` supporting services and internal products.
+
+---
 
 ## Key achievements
 
@@ -21,9 +23,11 @@ DevOps/Platform engineer with **20+ years** in operations, networking, infrastru
 - **Cloudflare Zero Trust service publishing:** designed and implemented a standardized access model (applications/policies + DNS integration). Reduced secure access lead time from **1–2 business days to 1–2 hours**, reduced manual operations by **~30%**.
 - **Self-service provisioning (GitHub + Atlantis):** established a PR-driven provisioning model where engineers declare infrastructure and Atlantis applies Terraform changes. My contribution: production-ready Terraform modules for AWS and Cloudflare Zero Trust. Typical requests completed in **~30–60 minutes vs 1–2 days**, routine DevOps tickets reduced by **~30–40%**.
 - **FinOps automation for perf environments:** implemented cost optimization using **Cloud Custodian** executed via **EKS CronJobs** (`daily/weekly`), with reports in object storage and Slack notifications via queue + mailer. Safety: **dry-run**, protection tags, and **`mark-for-op → grace period → action`** workflow. Savings: **~20–35% per month** (perf environments), fewer “forgotten” resources.
-- **Custom tooling to close gaps:** delivered extensions where out-of-the-box tooling was insufficient (e.g., custom plugin for DynamoDB GSI throughput operations; webhook API on FastAPI for unsupported actions), with metrics, validation, and safe defaults.
+- **Closing provider gaps with custom tooling:** delivered custom extensions where “out of the box” tooling was not enough (e.g., custom plugin for DynamoDB GSI throughput operations; webhook API on FastAPI for unsupported actions such as some ElastiCache replication group operations), with metrics, validation, and safe defaults.
 - **Observability standards (VictoriaMetrics/Prometheus/Grafana):** centralized metrics, standardized dashboards/alerts, introduced cardinality limits and control of “heavy” queries. Result: faster triage (**~20–25%**) and less alert noise (**~20–30%**).
-- **Open-source contribution:** improved cost metric export/filtering (PR link above); reporting preparation improved from **~1–2 hours to 15–30 minutes**.
+- **Open-source contribution:** upstream PR to **aws-cost-exporter** — https://github.com/electrolux-oss/aws-cost-exporter/pull/50 — improved cost metric export/filtering for dashboards/alerting; reporting preparation improved from **~1–2 hours to 15–30 minutes**.
+
+---
 
 ## Experience
 
@@ -48,15 +52,22 @@ DevOps/Platform engineer with **20+ years** in operations, networking, infrastru
 - Developed hybrid corporate networking and remote access services.
 - Increased repeatability through automation of network operations.
 
+---
+
 ### NIKA LLC — Vologda, Russia
 
 **Director / Head of IT Outsourcing** · Aug 2008 — Nov 2020
 
-- Ran an IT services business (outsourcing/support), delivered **50+ projects** in automation and infrastructure; built an operations model (SLA, incidents, changes).
+- Ran an IT services business (outsourcing/support), delivered **50+ projects** in automation and infrastructure.
+- Built an operations model (SLA, incidents, changes) and implemented network/security solutions for customers.
+
+---
 
 ## Education
 
 Vologda State Technical University — Automation Engineer · 2001
+
+---
 
 ## Languages
 
