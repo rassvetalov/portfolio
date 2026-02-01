@@ -73,4 +73,9 @@ This repo is ready to be used as a simple GitHub Pages landing page.
 - **Branch**: `main`
 - **Folder**: `/docs`
 
+## Contributing / security
+
+- `CONTRIBUTING.md` (no PRs / no issues)
+- `SECURITY.md` (how to report sensitive findings)
+
 
