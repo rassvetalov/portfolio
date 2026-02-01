@@ -1,0 +1,24 @@
+flowchart LR
+  subgraph k8s["EKS (<env>)"]
+    cron["CronJobs\n(daily/weekly)"]
+    c7n["Cloud Custodian\n(policy-as-code)"]
+    cron --> c7n
+  end
+
+  c7n -->|reports| s3["<object storage>\n(run reports)"]
+  c7n -->|notify| sqs["<queue>"]
+  sqs --> mailer["c7n-mailer\n(notification worker)"]
+  mailer --> slack["Slack\n(#<channel>)"]
+
+  subgraph lifecycle["mark-for-op lifecycle (safe remediation)"]
+    detect["Detect idle resource"]
+    mark["Mark for operation\n(tag/mark)"]
+    wait["Grace period\n(time to react)"]
+    act["Action\n(resize/stop/delete)"]
+    protect["Protection tag?\n(opt-out)"]
+
+    detect --> protect
+    protect -- "yes" --> stop["Skip + report"]
+    protect -- "no" --> mark --> wait --> act
+  end
+

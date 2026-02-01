@@ -1,0 +1,7 @@
+flowchart LR
+  user["User"] --> idp["<IdP>\n(authentication)"]
+  idp --> zt["Cloudflare Zero Trust\n(app + policy enforcement)"]
+  zt --> dns["DNS\n(<service>.<env>.<domain>)"]
+  zt --> connector["Private connector\n(to <cluster> network)"]
+  connector --> svc["<internal service>\n(private)"]
+

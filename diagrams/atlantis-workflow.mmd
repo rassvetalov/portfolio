@@ -1,0 +1,21 @@
+sequenceDiagram
+  participant Dev as Developer
+  participant GH as GitHub (PR)
+  participant Atl as Atlantis
+  participant TF as Terraform
+  participant Cloud as AWS (<account>)
+
+  Dev->>GH: Open PR with IaC change
+  GH->>Atl: Webhook (PR opened/updated)
+  Atl->>TF: terraform plan (scoped)
+  TF-->>Atl: Plan output
+  Atl-->>GH: Comment plan for review
+  Dev->>GH: Address review, approvals
+  Dev->>Atl: Approve/apply command (per policy)
+  Atl->>TF: terraform apply
+  TF->>Cloud: Create/update resources
+  Cloud-->>TF: API responses
+  TF-->>Atl: Apply result
+  Atl-->>GH: Comment apply status
+  Note over GH,Atl: Drift control: scheduled plans + runbooks\n(detect → explain → reconcile)
+
