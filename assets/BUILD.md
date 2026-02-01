@@ -13,11 +13,11 @@ If you want recruiter-friendly formats, generate PDF/DOCX locally.
 # from repo root
 cd assets
 
-# PDF (requires a LaTeX engine installed in your system)
+# EN PDF (requires a LaTeX engine installed in your system)
 pandoc CV_Dmitriy_Rassvetalov_EN.md -o CV_Dmitriy_Rassvetalov_EN.pdf
 
-# RU PDF (Cyrillic): prefer xelatex
-pandoc CV_Dmitriy_Rassvetalov_RU.md -o CV_Dmitriy_Rassvetalov_RU.pdf --pdf-engine=xelatex
+# RU PDF (Cyrillic): prefer xelatex + a Unicode font installed
+pandoc CV_Dmitriy_Rassvetalov_RU.md -o CV_Dmitriy_Rassvetalov_RU.pdf --pdf-engine=xelatex -V mainfont="DejaVu Sans"
 
 # DOCX
 pandoc CV_Dmitriy_Rassvetalov_EN.md -o CV_Dmitriy_Rassvetalov_EN.docx
