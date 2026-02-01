@@ -2,7 +2,7 @@
 
 ## Context & scale
 
-- **Platform scale**: 29 EKS clusters across `<prod>/<stage>/<test>`
+- **Platform scale**: 30+ EKS clusters across `<prod>/<stage>/<test>`
 - **Access pattern**: internal services that must remain private, but available to distributed teams
 - **Goal**: reduce lead time and manual work for secure service access, without exposing services publicly
 
@@ -67,6 +67,23 @@ Design principles:
 - **Runbooks**:
   - onboarding a new `<service>` into the ZT model
   - incident response: validate IdP, policy, connector status, service health
+
+### NDA-safe example snippets
+
+Example policy intent (illustrative only):
+
+```text
+Application: <service> (<env>)
+Default: deny
+Allow: <group:engineers> for <env:test|stage>
+Allow: <group:oncall> for <env:prod> (break-glass, time-bounded)
+```
+
+Runbook snippet (troubleshooting path):
+
+- Validate `<IdP>` authentication works for the user
+- Check policy order: deny/allow rules, `<env>` scoping, group membership
+- Confirm private connector is healthy and `<internal service>` is reachable from `<cluster>` network
 
 ## Results
 

@@ -2,8 +2,10 @@
 
 ## Resume
 
-- **PDF (TODO)**: `<link-to-pdf>`
-- **DOCX (TODO)**: `<link-to-docx>`
+- **English (MD)**: `assets/CV_Dmitriy_Rassvetalov_EN.md`
+- **Russian (MD)**: `assets/CV_Dmitriy_Rassvetalov_RU.md`
+- **English (PDF, TODO)**: `assets/CV_Dmitriy_Rassvetalov_EN.pdf`
+- **English (DOCX, TODO)**: `assets/CV_Dmitriy_Rassvetalov_EN.docx`
 
 ## LinkedIn
 
@@ -19,11 +21,13 @@
 
 ## Articles (coming soon)
 
-- **TODO**: `<link-to-article-1>`
-- **TODO**: `<link-to-article-2>`
+- **TODO**: FinOps automation with Cloud Custodian on Kubernetes
+- **TODO**: EKS networking patterns at scale
+- **TODO**: Zero Trust service publishing (Cloudflare Zero Trust)
 
 ## Repos (coming soon)
 
-- **TODO**: `<link-to-repo-1>`
-- **TODO**: `<link-to-repo-2>`
+- **TODO**: terraform-modules (sanitized examples)
+- **TODO**: exporters (sanitized examples)
+- **TODO**: runbooks (sanitized examples)
 

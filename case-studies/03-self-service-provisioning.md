@@ -2,7 +2,7 @@
 
 ## Context & scale
 
-- **Platform scale**: 29 EKS clusters across `<prod>/<stage>/<test>`
+- **Platform scale**: 30+ EKS clusters across `<prod>/<stage>/<test>`
 - **Consumers**: multiple engineering teams shipping services and internal tooling
 - **Goal**: make infrastructure changes fast, reviewable, and safe at scale
 
@@ -70,6 +70,23 @@ Design choices:
 - **Observability**:
   - pipeline signals: success/failure rates, time-to-merge, time-to-apply
   - basic cost visibility for common stacks (where safe and available)
+
+### NDA-safe example snippets
+
+Example PR workflow (illustrative only):
+
+```text
+PR: Add <queue> for <service> in <env>
+  - Atlantis plan posted to PR
+  - CODEOWNERS review required for apply
+  - Apply allowed only after approvals
+```
+
+Runbook snippet (apply failure):
+
+- Re-run plan to confirm no unexpected diffs
+- If AWS API throttling: retry with backoff guidance
+- If partial apply: follow “reconcile state” checklist (idempotent re-apply first, then targeted fixes)
 
 ## Results
 

@@ -2,7 +2,7 @@
 
 ## Context & scale
 
-- **Platform scale**: 29 EKS clusters across `<prod>/<stage>/<test>`
+- **Platform scale**: 30+ EKS clusters across `<prod>/<stage>/<test>`
 - **Target scope**: perf/non-prod workloads across multiple `<account>`/`<region>`
 - **Goal**: reduce spend and operational load from idle resources, without breaking teams’ workflows
 
@@ -75,6 +75,33 @@ High-level design:
   - AWS throttling → backoff + partial results
   - missing tags/ownership → warn/notify-only path
   - unexpected resource dependencies → skip + report
+
+### NDA-safe example snippets
+
+Example policy structure (illustrative only):
+
+```yaml
+policies:
+  - name: <env>-idle-asg-downscale
+    resource: asg
+    filters:
+      - type: metrics
+        name: CPUUtilization
+        op: lt
+        value: <threshold>
+        days: <window>
+      - "tag:finops-exempt": absent
+    actions:
+      - type: mark-for-op
+        op: resize
+        days: <grace-period>
+```
+
+Runbook snippet (operator checklist):
+
+- Confirm `<env>` scope and protection tags
+- Review report artifacts from the last run (`<object storage>`)
+- If action looks risky: switch policy to mark-only, notify owners, re-run next cycle
 
 ## Results
 

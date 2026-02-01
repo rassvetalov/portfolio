@@ -2,15 +2,21 @@
 
 AWS · Kubernetes (EKS) · Terraform · Observability · FinOps Automation
 
-I build and operate AWS/EKS platforms at scale: **29 Kubernetes (EKS) clusters** across `<prod>/<stage>/<test>`.
+I build and operate AWS/EKS platforms at scale: **30+ Kubernetes (EKS) clusters** across `<prod>/<stage>/<test>`.
 My focus areas are **platform networking/service publishing**, **self-service infrastructure**, **observability**, and **FinOps automation**.
 I also write **NDA-safe custom tooling** (exporters/services) to close gaps in AWS/monitoring ecosystems.
 
 > NDA note: this repository is **public-friendly**. It uses placeholders like `<cluster>`, `<account>`, `<env>` and contains **no internal domains, IDs, bucket names, or topology details**.
 
+## Contact
+
+- Email: `vstahanov@gmail.com`
+- LinkedIn: `https://linkedin.com/in/dmitriy-rassvetalov-92297458`
+- Location: Limassol, Cyprus
+
 ## Scope
 
-- **Scale**: 29 EKS clusters across `<prod>/<stage>/<test>`
+- **Scale**: 30+ EKS clusters across `<prod>/<stage>/<test>`
 - **Cloud**: AWS (multi-`<account>` / multi-`<region>`)
 - **Platform**: EKS networking, ingress/egress, service exposure, DNS integration
 - **IaC**: Terraform modules + PR-based workflows
@@ -43,6 +49,7 @@ I also write **NDA-safe custom tooling** (exporters/services) to close gaps in A
   - `case-studies/01-finops-automation.md`
   - `case-studies/02-zero-trust-publishing.md`
   - `case-studies/03-self-service-provisioning.md`
+  - `case-studies/04-observability.md`
 - Diagrams (Mermaid):
   - `diagrams/finops-architecture.mmd`
   - `diagrams/zero-trust-flow.mmd`
@@ -52,4 +59,14 @@ I also write **NDA-safe custom tooling** (exporters/services) to close gaps in A
 
 - `links.md`
 - Open-source: `https://github.com/electrolux-oss/aws-cost-exporter/pull/50`
+
+## GitHub Pages
+
+This repo is ready to be used as a simple GitHub Pages landing page.
+
+- GitHub → **Settings** → **Pages**
+- **Source**: Deploy from a branch
+- **Branch**: `main`
+- **Folder**: `/docs`
+
 
