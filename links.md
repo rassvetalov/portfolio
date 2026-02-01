@@ -4,7 +4,8 @@
 
 - **English (MD)**: `assets/CV_Dmitriy_Rassvetalov_EN.md`
 - **Russian (MD)**: `assets/CV_Dmitriy_Rassvetalov_RU.md`
-- **English (PDF, TODO)**: `assets/CV_Dmitriy_Rassvetalov_EN.pdf`
+- **English (PDF)**: `assets/CV_Dmitriy_Rassvetalov_EN.pdf`
+- **Russian (PDF)**: `assets/CV_Dmitriy_Rassvetalov_RU.pdf`
 - **English (DOCX, TODO)**: `assets/CV_Dmitriy_Rassvetalov_EN.docx`
 
 ## One-pager

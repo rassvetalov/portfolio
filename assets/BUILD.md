@@ -16,6 +16,9 @@ cd assets
 # PDF (requires a LaTeX engine installed in your system)
 pandoc CV_Dmitriy_Rassvetalov_EN.md -o CV_Dmitriy_Rassvetalov_EN.pdf
 
+# RU PDF (Cyrillic): prefer xelatex
+pandoc CV_Dmitriy_Rassvetalov_RU.md -o CV_Dmitriy_Rassvetalov_RU.pdf --pdf-engine=xelatex
+
 # DOCX
 pandoc CV_Dmitriy_Rassvetalov_EN.md -o CV_Dmitriy_Rassvetalov_EN.docx
 ```
