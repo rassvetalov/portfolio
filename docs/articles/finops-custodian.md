@@ -38,3 +38,16 @@ Perf/non-prod environments accumulate idle resources. Manual cleanup is slow and
 - Add CI for policies (lint + fixtures + regression checks)
 - Add PR-level cost awareness (estimation / budget hints)
 
+## TODO (expand this article)
+
+- [ ] Add context & scale (NDA-safe: `<account>`, `<env>`, `<cluster>` only)
+- [ ] Add design details (diagram optional)
+- [ ] Add safety/operations section (failure modes, monitoring, runbook snippet)
+- [ ] Add a small NDA-safe pseudo-policy snippet (placeholders only)
+- [ ] Add trade-offs and “what I would improve next”
+
+## Navigation
+
+- [Articles index](index)
+- [Home](../index)
+

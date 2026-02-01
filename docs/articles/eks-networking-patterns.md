@@ -20,3 +20,15 @@ Operating **30+ EKS clusters** means networking decisions must be standardized: 
 Describe patterns, failure modes, and trade-offs without exposing:
 internal domains, VPC/subnet IDs, or exact topology.
 
+## TODO (expand this article)
+
+- [ ] Add a “pattern catalog” (ingress/egress/DNS) with pros/cons
+- [ ] Add operational failure modes (DNS drift, exposure mistakes, egress outages)
+- [ ] Add runbook snippets (triage checklists)
+- [ ] Add links to related case studies/diagrams (NDA-safe)
+
+## Navigation
+
+- [Articles index](index)
+- [Home](../index)
+

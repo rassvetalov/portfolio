@@ -23,3 +23,15 @@ Teams need access to internal services, but exposing everything publicly is not 
 - misrouted DNS
 - policy drift between clusters/environments
 
+## TODO (expand this article)
+
+- [ ] Define exposure tiers and review gates (NDA-safe)
+- [ ] Add example “publishing contract” checklist for a new `<service>`
+- [ ] Add troubleshooting flow: DNS → policy → connector → service
+- [ ] Add recommended defaults (timeouts, retries, logging)
+
+## Navigation
+
+- [Articles index](index)
+- [Home](../index)
+

@@ -29,3 +29,15 @@ FinOps automation breaks trust if it deletes or downsizes resources unexpectedly
 - Always produce artifacts: “what was evaluated” and “what would be changed”
 - Treat AWS API throttling and partial failures as normal; keep runs idempotent
 
+## TODO (expand this article)
+
+- [ ] Add concrete examples: resize vs stop vs delete (still NDA-safe)
+- [ ] Add recommended defaults (grace period, protections, rollout stages)
+- [ ] Add common failure modes and how to mitigate them
+- [ ] Add a short operator checklist (runbook snippet)
+
+## Navigation
+
+- [Articles index](index)
+- [Home](../index)
+

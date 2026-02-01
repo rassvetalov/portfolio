@@ -24,3 +24,15 @@ You build an exporter when:
 
 Share patterns and code skeletons with `<placeholders>`, never internal resource names/IDs.
 
+## TODO (expand this article)
+
+- [ ] Add a minimal exporter skeleton (Python/Go, placeholders only)
+- [ ] Add caching strategy examples (TTL + stale-on-error)
+- [ ] Add rate limiting and retry/backoff examples
+- [ ] Add label hygiene rules to prevent cardinality issues
+
+## Navigation
+
+- [Articles index](index)
+- [Home](../index)
+

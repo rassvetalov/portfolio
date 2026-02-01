@@ -20,3 +20,15 @@ Ticket-driven provisioning is slow and hard to audit. Ad-hoc changes drift over 
 - Typical requests: ~30–60 minutes vs 1–2 days
 - Routine DevOps tickets: -30–40%
 
+## TODO (expand this article)
+
+- [ ] Add guardrails (CODEOWNERS, approvals, environment scoping)
+- [ ] Add state locking/concurrency notes and runbooks
+- [ ] Add drift handling (detect → explain → reconcile)
+- [ ] Add an NDA-safe repo layout example
+
+## Navigation
+
+- [Articles index](index)
+- [Home](../index)
+

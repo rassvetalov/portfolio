@@ -16,3 +16,7 @@ All articles are **NDA-safe**: placeholders like `<cluster>`, `<account>`, `<env
 - [PR-driven IaC with Atlantis](atlantis-iac-workflow)
 - [Custom Prometheus exporters (patterns)](custom-exporters)
 
+## Navigation
+
+- [Home](../index)
+

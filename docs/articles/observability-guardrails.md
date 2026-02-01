@@ -24,3 +24,15 @@ In multi-tenant observability, uncontrolled label cardinality and expensive quer
 - ~20–25% faster triage
 - ~20–30% less alert noise
 
+## TODO (expand this article)
+
+- [ ] Add a short “cardinality anti-patterns” list (with fixes)
+- [ ] Add “heavy query” checklist (range/step/max points)
+- [ ] Add a minimal alert annotation template + ownership guidance
+- [ ] Add operational handling: detect → optimize → restrict (if needed)
+
+## Navigation
+
+- [Articles index](index)
+- [Home](../index)
+
