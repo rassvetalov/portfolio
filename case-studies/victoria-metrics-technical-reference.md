@@ -166,9 +166,54 @@ terraform {
 
 ---
 
+## Pod Disruption Budget (CRITICAL for Production)
+
+**RF=1 requires PDB to prevent silent alerting underfire during rolling upgrades:**
+
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vmstorage-a-pdb
+  namespace: prod-itprod
+spec:
+  minAvailable: 9  # Max 1 pod down at a time; prevents 10% partial queries
+  selector:
+    matchLabels:
+      app: vmstorage-a
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vmselect-main-a-pdb
+spec:
+  minAvailable: 4  # 5 pods; allow 1 disruption
+  selector:
+    matchLabels:
+      app: vmselect-main-a
+---
+# Catch-all needs less strict PDB since it has more shards
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vmagent-zone-1a-catchall-pdb
+spec:
+  minAvailable: 4  # 5 shards; allow 1 shard disruption
+  selector:
+    matchLabels:
+      app: vmagent-zone-1a-catchall
+```
+
+**Why minAvailable vs. maxUnavailable:**
+- `minAvailable: 9` = Kubernetes guarantees ≥9 pods running
+- During rolling upgrade: max 1 pod can be evicted simultaneously
+- Prevents 2+ vmstorage pods down at same time (which = 20% partial queries)
+
+---
+
 ## Pod Affinity Rules
 
-### vmstorage Pods (Strict Isolation)
+### vmstorage Pods (Strict Isolation + PDB)
 
 ```yaml
 affinity:
@@ -194,7 +239,7 @@ tolerations:
 **Why podAntiAffinity required?**
 - RF=1 means two vmstorage-a on same node → node failure loses 2/10 shards (20% partial responses)
 - Preferred ≠ guaranteed → scheduler can ignore under pressure
-- Required = hard guarantee
+- Required + PDB = production-safe guarantee
 
 ### vmagent-buffer, vminsert Pods (Preferred)
 
