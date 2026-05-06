@@ -1,4 +1,4 @@
-# Архитектура Victoria Metrics Multi-AZ: За Что Платим и Как Сохранили $20K/год
+# Архитектура Victoria Metrics Multi-AZ: AZ-Level DR Без Replication Tax
 
 **Презентация для конференции**  
 **Длительность:** 25 минут  
@@ -13,16 +13,17 @@
 │                                                                 │
 │  🏗️  VICTORIA METRICS MULTI-AZ                                 │
 │                                                                 │
-│      Как мы избежали платить 2× за надёжность                │
-│      и сэкономили $20K/год на cross-AZ трафике               │
+│      Как получить AZ-level DR без удвоения write I/O          │
+│      (и почему RF=2 — это не то, что вы думаете)              │
 │                                                                 │
 │      Dmitrii Rassvetalov                                        │
 │      IT Production, Playrix                                     │
 │      111M active series · 1.66M samples/sec                     │
+│      Production: atf01 (deployed Jan 2026)                      │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
-KEY: "Не платите дважды за то, что можно получить один раз"
+KEY: "RF=2 защищает от потери ноды. AZ — это другая проблема."
 ```
 
 ---
@@ -196,31 +197,40 @@ TABLE: Comparison nginx vs NLB, checkmarks/crosses для каждого пун�
 
 ---
 
-## Слайд 8: Результаты — Числа
+## Слайд 8: Результаты — Честные Числа
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  РЕЗУЛЬТАТЫ (Playrix atf01, May 2026)                          │
 │                                                                 │
 │  ┌──────────────────────────────────────────────────────────┐  │
-│  │                          БЫЛО      СТАЛО      ЭКОНОМИЯ  │  │
-│  ├──────────────────────────────────────────────────────────┤  │
-│  │ vmselect fan-out       20 нод    10 нод/кл   −50% памяти │  │
-│  │ Cross-AZ read traffic  67%       0%          −$900/мо   │  │
-│  │ Write I/O per cluster  2×        1×          −$400/мо   │  │
-│  │ Dual-write overhead    —         +$950/мо    +$950/мо   │  │
+│  │ COST DELTA (verified, peer-reviewed):                    │  │
 │  │                                                          │  │
-│  │ 🎯 ИТОГО:                        −$1,630/месяц         │  │
-│  │ 🎯 В ГОД:                        −$19,560              │  │
-│  │ 🎯 PAYBACK:                      ~3 месяца             │  │
+│  │  −$900/мес  Cross-AZ read egress eliminated             │  │
+│  │  −$400/мес  Write I/O ×2 → ×1 per cluster              │  │
+│  │  +$950/мес  Cross-AZ write (dual-write overhead)        │  │
+│  │  +$30/мес   EBS for vmagent buffers                     │  │
+│  │  ────────                                               │  │
+│  │  −$320/мес  💰 NET CASH SAVINGS                         │  │
+│  │                                                          │  │
+│  │  + Avoid vmselect upsizing (~$280/мес implicit save)    │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │                                                                 │
+│  🎯 PAYBACK: ~75 месяцев на чистом cash                        │
+│  🎯 РЕАЛЬНАЯ ЦЕННОСТЬ:                                          │
+│     ├─ AZ-level DR (RPO=0 в окне <5 мин)                       │
+│     ├─ Failover без ручного вмешательства (5-15s)              │
+│     └─ Operational simplicity (vs zone-aware sharding)         │
+│                                                                 │
+│  ⚠️ ЧЕСТНО: это инвестиция в DR, не оптимизация cost.         │
+│     Если нужна экономия → cardinality reduction (другой talk)  │
+│                                                                 │
 │  111M active series, 1.66M samples/sec baseline               │
-│  AWS egress rate $0.01/GB (May 2026)                          │
+│  AWS egress: $0.02/GB на conversation (in + out)              │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
-CHART: Large numbers, highlight negative (savings) in green
+KEY MOMENT: "Не 'мы сэкономили $20K/год'. А 'мы получили AZ-DR за $4K/год'"
 ```
 
 ---
@@ -408,8 +418,9 @@ FORMAT: Numbered list с emoji, каждый с 1-2 sentence insight
 │  ROADMAP: Следующие Оптимизации                                │
 │                                                                 │
 │  ✅ DONE (May 2026):                                            │
-│  • Dual-cluster по AZ (deployed atf01, prf01, apc01)          │
-│  • NLB вместо nginx + vmauth                                   │
+│  • Dual-cluster по AZ (production: atf01)                      │
+│  • Pilot deployments: prf01 (Q2), apc01 planned (Q3)           │
+│  • NLB вместо nginx + vmauth (atf01)                           │
 │  • Topology-mode: Auto на K8s services                         │
 │                                                                 │
 │  ⏳ DEFERRED (ROI threshold not met):                           │

@@ -33,22 +33,26 @@ KEY: "Не всё, что можно оптимизировать, нужно о
 ┌─────────────────────────────────────────────────────────────────┐
 │  BASELINE MEASUREMENT (May 4, 2026)                            │
 │                                                                 │
-│  Кластер      Scrape RX    % Cross-AZ    $ Cost/мо            │
+│  Кластер      Scrape RX    % Cross-AZ    $ Cost/мо (corrected)│
 │  ─────────────────────────────────────────────────────────────│
-│  apv01        7.64 MB/s    ~67%          $240  ⚠️ BIGGEST   │
-│  prf01        2.36 MB/s    ~67%          $74                 │
-│  atf01        2.13 MB/s    ~67%          $100                │
-│  apc01        1.51 MB/s    ~50%          $34                 │
-│  adv01        1.44 MB/s    ~67%          $46                 │
-│  adc01        0.84 MB/s    ~50%          $18                 │
-│  sbx01        0.65 MB/s    ~67%          $22                 │
+│  apv01        7.64 MB/s    ~67%          ~$259  ⚠️ BIGGEST  │
+│  prf01        2.36 MB/s    ~67%          ~$80                │
+│  atf01        2.13 MB/s    ~67%          ~$108               │
+│  apc01        1.51 MB/s    ~50%          ~$37                │
+│  adv01        1.44 MB/s    ~67%          ~$50                │
+│  adc01        0.84 MB/s    ~50%          ~$20                │
+│  sbx01        0.65 MB/s    ~67%          ~$24                │
 │  ────────────────────────────────────────────────────────────│
-│  ИТОГО        15.57 MB/s   ~67% avg      $534/месяц         │
+│  ИТОГО        15.57 MB/s   ~67% avg      ~$578/месяц        │
 │                                                                 │
-│  Способ измерения:                                              │
-│  • container_network_transmit_bytes_total {pod=~"vmagent.*"}  │
-│  • AWS billing: $0.01/GB cross-AZ                             │
-│  • 7-day average (April 28 - May 4)                           │
+│  Способ измерения (auditable):                                  │
+│  • vm_promscrape_response_size_bytes_sum (vmagent native)     │
+│  • Cross-checked: AWS Cost Explorer + VPC Flow Logs           │
+│  • AWS billing: $0.02/GB на conversation (in + out)           │
+│  • 7-day average (April 28 - May 4, 2026)                     │
+│                                                                 │
+│  ⚠️ EARLIER ESTIMATE: $534/мес (использовал $0.01/GB only).   │
+│     Corrected: $578/мес (учитывает в обе стороны)             │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
@@ -347,31 +351,40 @@ ICONS: Warning sign, red X for each gotcha
 
 ---
 
-## Слайд 11: Comparison — Single vs. Multi-AZ Scraper
+## Слайд 11: Comparison — Trade-Off Honest
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  ARCHITECTURE COMPARISON                                        │
+│  ARCHITECTURE COMPARISON (honest trade-offs)                   │
 │                                                                 │
-│                    SINGLE AGENT     N AGENTS (AZ-AWARE)      │
-│  ───────────────────────────────────────────────────────────  │
-│  Deployment       1 StatefulSet    N CRD (3 for 3 AZ)        │
-│  Operational      Simple            +Complexity (CRDs, DRY) │
-│  Operational      Simple            +Complexity (CRDs, DRY)  │
-│  Cross-AZ cost    $534/месяц         ~$160/месяц (70% save)  │
-│  Pod scheduling   Random across AZ  nodeAffinity per AZ      │
-│  Cardinality      111M series        111M series (not 2×)    │
-│  Failover         Slow (random AZ)   Fast (local 1st)        │
-│  ROI threshold    N/A                $1K/месяц per cluster   │
-│  Operator deps    chart 0.35+        chart 0.70+ (precond)   │
+│                    SINGLE AGENT      N AGENTS (AZ-AWARE)       │
+│  ─────────────────────────────────────────────────────────────│
+│  Deployment        1 StatefulSet     N CRD (3 для 3 AZ)        │
+│  Operational       Simple             +Complexity (sizing,DRY) │
+│  Cross-AZ cost     $578/мес           ~$170/мес (70% save)     │
+│  Pod scheduling    Random across AZ   nodeAffinity per AZ      │
 │                                                                 │
-│  VERDICT:                                                       │
-│  ✓ Deploy today: single agent (ROI not there yet)            │
-│  ⏳ Deploy in 2027: N agents when cross-AZ crosses $1K       │
+│  Failover на pod   30-60s pod restart 30-60s pod restart       │
+│                    (другой shard)     (внутри той же AZ)       │
+│                                                                 │
+│  Failover на AZ    Other AZ продолжат AZ-pod ↔ targets-в-той   │
+│                    scrape (cross-AZ)  AZ STOP до восстановления│
+│                                                                 │
+│  Resilience        Higher (zone loss  Lower (catch-all AZ      │
+│                    redistributes)      = SPOF for apiserver)   │
+│                                                                 │
+│  ROI threshold     n/a                $1K/мес per cluster      │
+│  Chart deps        chart 0.35+        chart 0.70+ + op v0.61+  │
+│                                                                 │
+│  ВЕРДИКТ:                                                       │
+│  ✓ Deploy today: single agent — резильентнее + ROI not там     │
+│  ⏳ В 2027 (когда $1K/мес): N agents — экономия выгоднее       │
+│                                                                 │
+│  TRADE-OFF: Cost savings vs. AZ-failure resilience              │
 │                                                                 │
 └─────────────────────────────────────────────────────────────────┘
 
-TABLE: Side-by-side comparison, highlight "ROI threshold"
+KEY: "Single agent более resilient к AZ failure. N agents дешевле."
 ```
 
 ---

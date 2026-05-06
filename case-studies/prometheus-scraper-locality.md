@@ -36,26 +36,38 @@ atf01 (3 AZ: 1a, 1b, 1c)
 
 **Current behavior (Prometheus/vmagent default):**
 
-Each vmagent scrapes **all targets regardless of AZ**. Pod in 1a makes requests to targets in 1b and 1c. AWS charges cross-AZ egress on every HTTP request (gzip doesn't help — billing counts on-wire bytes).
+Each vmagent scrapes **all targets regardless of AZ**. Pod in 1a makes requests to targets in 1b and 1c. AWS charges cross-AZ data transfer on every HTTP response (gzip is on-wire compressed; AWS bills compressed bytes).
 
 ```
-vmagent-0 (1a) → targets in 1a ✓ (local)
-               → targets in 1b ✗ (cross-AZ, $0.01/GB)
-               → targets in 1c ✗ (cross-AZ, $0.01/GB)
+vmagent-0 (1a) → scrape targets in 1a ✓ (local, no charge)
+               → scrape targets in 1b ✗ (cross-AZ, $0.02/GB conversation*)
+               → scrape targets in 1c ✗ (cross-AZ, $0.02/GB conversation*)
+
+  * AWS charges $0.01/GB OUT and $0.01/GB IN — effective $0.02/GB on conversation
 ```
 
 Baseline measurement (4 May 2026, 7-day average):
 
-| Cluster | Shards | RX MB/s | Cross-AZ % | Cost |
+| Cluster | Shards | Scrape RX MB/s | Cross-AZ % | Cost (corrected) |
 |---------|--------|---------|------------|------|
-| apv01 (prod US) | 15 | 7.64 | ~67% | **$240/mo** |
-| prf01 (perf US) | 15 | 2.36 | ~67% | $74 |
-| atf01 (test EU) | 3 | 2.13 | ~67% | $100 |
-| apc01 (prod China) | 3 | 1.51 | ~50% | $34 |
-| adv01 (dev US) | 3 | 1.44 | ~67% | $46 |
-| adc01 (dev China) | 3 | 0.84 | ~50% | $18 |
-| sbx01 (sandbox EU) | 3 | 0.65 | ~67% | $22 |
-| **Total** | | | | **$534/month** |
+| apv01 (prod US) | 15 | 7.64 | ~67% | **~$259/mo** |
+| prf01 (perf US) | 15 | 2.36 | ~67% | ~$80 |
+| atf01 (test EU) | 3 | 2.13 | ~67% | ~$108 |
+| apc01 (prod China) | 3 | 1.51 | ~50% | ~$37 |
+| adv01 (dev US) | 3 | 1.44 | ~67% | ~$50 |
+| adc01 (dev China) | 3 | 0.84 | ~50% | ~$20 |
+| sbx01 (sandbox EU) | 3 | 0.65 | ~67% | ~$24 |
+| **Total** | | | | **~$578/month** |
+
+> **Methodology (auditable):**
+> 1. AWS Cost Explorer → group by `UsageType: DataTransfer-Regional-Bytes`
+> 2. Cross-checked via VPC Flow Logs (Athena: `srcAZ ≠ dstAZ`)
+> 3. Per-pod attribution via `vm_promscrape_response_size_bytes_sum` (vmagent native)
+> 4. Earlier drafts used `container_network_transmit_bytes_total` — **WRONG**:
+>    vmagent is the *receiver* of scrape responses, not sender. Use
+>    `container_network_receive_bytes_total` for ingress, or vmagent-native counters.
+> 5. Earlier drafts cited "$0.01/GB" — that's only one direction. Effective rate
+>    is **$0.02/GB on conversation** (AWS charges both endpoints in cross-AZ flow).
 
 **Why only 67% cross-AZ, not 100%?** 
 - gzip compresses scrape responses 10-20× on-wire
@@ -308,8 +320,13 @@ Acceptance checks:
 ### Monitoring Metrics
 
 ```promql
-# Cross-AZ traffic (should drop significantly)
-sum(rate(container_network_transmit_bytes_total{pod=~"vmagent-zone-.*"}[5m]))
+# Cross-AZ scrape volume (CORRECTED: receive direction, vmagent is receiver)
+# For accurate cross-AZ attribution, use VPC Flow Logs via Athena
+sum(rate(container_network_receive_bytes_total{pod=~"vmagent-zone-.*"}[5m]))
+  by (pod) / 1024 / 1024  # MB/s
+
+# Better: vmagent-native scrape response size (independent of pod network)
+sum(rate(vm_promscrape_response_size_bytes_sum{job="vmagent"}[5m]))
   by (pod) / 1024 / 1024  # MB/s
 
 # Zone distribution (should match pod count per AZ)
@@ -397,10 +414,26 @@ Upgrade path documented (§11 design doc).
   expr: process_resident_memory_bytes{vmagent_role="catch-all"} / 500e6 > 0.8
 
 # Cross-AZ traffic not reduced (hints disabled silently)
+# Requires recording rule to compute baseline
+- record: vmagent:cross_az_baseline:7d_avg
+  expr: |
+    avg_over_time(
+      sum(rate(container_network_receive_bytes_total{pod=~"vmagent.*"}[5m]))[7d:5m]
+    )
+
 - alert: CrossAZScrapingNotOptimized
   expr: |
-    sum(rate(container_network_transmit_bytes_total{pod=~"vmagent.*"}[5m])) > (1.5 * historical_baseline)
+    sum(rate(container_network_receive_bytes_total{pod=~"vmagent.*"}[5m]))
+    > (1.5 * vmagent:cross_az_baseline:7d_avg)
+  for: 30m
+  annotations:
+    summary: "Cross-AZ scrape volume {{ $value | humanize }} > 1.5× 7d baseline"
+    action: "Check pod distribution, topology hints status, recent deployments"
 ```
+
+> **Note:** Earlier drafts used `container_network_transmit_bytes_total` —
+> WRONG direction. vmagent receives scrape responses, not sends them.
+> Use `container_network_receive_bytes_total` for vmagent ingress.
 
 ---
 

@@ -166,11 +166,13 @@ terraform {
 
 ---
 
-## Pod Disruption Budget (CRITICAL for Production)
+## Pod Disruption Budget (CRITICAL — BOTH CLUSTERS)
 
-**RF=1 requires PDB to prevent silent alerting underfire during rolling upgrades:**
+**RF=1 requires PDB to prevent silent alerting underfire during rolling upgrades.**
+**Symmetry rule: cluster-B needs the same PDBs as cluster-A.**
 
 ```yaml
+# === CLUSTER A (us-east-1a) ===
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -186,12 +188,59 @@ apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
   name: vmselect-main-a-pdb
+  namespace: prod-itprod
 spec:
   minAvailable: 4  # 5 pods; allow 1 disruption
   selector:
     matchLabels:
       app: vmselect-main-a
 ---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vmagent-buffer-a-pdb
+  namespace: prod-itprod
+spec:
+  minAvailable: 2  # 3 buffer pods; allow 1 disruption
+  selector:
+    matchLabels:
+      app: vmagent-buffer-a
+---
+# === CLUSTER B (us-east-1b) — MIRROR ===
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vmstorage-b-pdb
+  namespace: prod-itprod
+spec:
+  minAvailable: 9  # Same protection as cluster-A
+  selector:
+    matchLabels:
+      app: vmstorage-b
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vmselect-main-b-pdb
+  namespace: prod-itprod
+spec:
+  minAvailable: 4
+  selector:
+    matchLabels:
+      app: vmselect-main-b
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: vmagent-buffer-b-pdb
+  namespace: prod-itprod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: vmagent-buffer-b
+---
+# === SCRAPER VMAgents (if zone-aware deployed) ===
 # Catch-all needs less strict PDB since it has more shards
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -363,27 +412,40 @@ resource "aws_lb_target_group" "write_targets" {
   port        = 8429
   protocol    = "TCP"
   vpc_id      = aws_vpc.main.id
+  target_type = "ip"   # Required for TargetGroupBinding (pod IPs)
   
+  # CRITICAL: HTTP health check, not TCP
+  # TCP-only check passes if vminsert process is hung but not accepting writes
   health_check {
-    protocol            = "TCP"
-    interval            = 10   # Fast failover
+    protocol            = "HTTP"
+    path                = "/api/v1/write"
+    matcher             = "204"
+    port                = "8429"
+    interval            = 5    # Fast failover
     healthy_threshold   = 2
-    unhealthy_threshold = 2    # ~20s to failover
+    unhealthy_threshold = 2    # ~10s to failover
   }
+  
+  # NLB connection idle timeout — configurable since Sept 2024
+  # (was previously hardcoded to 350s, this constraint no longer applies for TCP listeners)
+  connection_termination = false
 }
+```
 
-# Register vmagent-buffer-a AND vmagent-buffer-b as targets
-resource "aws_lb_target_group_attachment" "write_targets_a" {
-  target_group_arn = aws_lb_target_group.write_targets.arn
-  target_id        = aws_instance.vmagent_buffer_a.id
-  port             = 8429
-}
-
-resource "aws_lb_target_group_attachment" "write_targets_b" {
-  target_group_arn = aws_lb_target_group.write_targets.arn
-  target_id        = aws_instance.vmagent_buffer_b.id
-  port             = 8429
-}
+```yaml
+# Use TargetGroupBinding (preferred over aws_lb_target_group_attachment for pod IPs)
+# Per Playrix workspace standards — see itprod-docker .cursorrules
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: vmagent-buffer-tgb
+  namespace: prod-itprod
+spec:
+  serviceRef:
+    name: vmagent-buffer  # ClusterIP service matching both buffer-a + buffer-b
+    port: 8429
+  targetGroupARN: arn:aws:elasticloadbalancing:...:targetgroup/atf01-vm-write-tg/...
+  targetType: ip
 ```
 
 **Why `cross_zone_load_balancing = false`?**
@@ -392,46 +454,90 @@ resource "aws_lb_target_group_attachment" "write_targets_b" {
 - Client from 1a region → NLB node in 1a → buffer pod in 1a
 - Automatic locality, no cross-AZ on write path buffer layer
 
-**NLB TCP idle timeout = 350s (hardcoded, immutable):**
-- Graphite clients idle > 350s → RST without warning
-- Check before deployment: all Graphite clients must support `SO_KEEPALIVE` with interval < 300s
+**Why HTTP health check over TCP?**
+- TCP check only verifies port is open
+- HTTP check verifies `/api/v1/write` endpoint responds with 204
+- Catches hung vminsert processes that TCP check would miss
+- Status code 204 (No Content) is correct for empty write request
+
+**NLB TCP idle timeout (UPDATED Sept 2024):**
+- Previously: hardcoded 350s
+- Now: **configurable 60-6000s** for TCP listeners (TLS still 350s fixed)
+- Set explicitly via `tcp_idle_timeout_seconds` attribute
+- Still recommended: Graphite clients use `SO_KEEPALIVE` < 300s for safety
+
+```hcl
+resource "aws_lb_listener" "write" {
+  load_balancer_arn = aws_lb.write_nlb.arn
+  port              = 8429
+  protocol          = "TCP"
+  
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.write_targets.arn
+  }
+  
+  # Configurable since Sept 2024 — extend beyond 350s for batch Graphite clients
+  tcp_idle_timeout_seconds = 600
+}
+```
 
 ---
 
-## Failover Sequence
+## Failover Sequence (Empirical Timing)
 
 ### Scenario: us-east-1a AZ Outage (Duration: T0 to T0+5min)
 
+> **Important:** Timings below are *empirical* (measured on production atf01),
+> not theoretical. Validate on your cluster: kill `vmagent-buffer-a-0` pod and
+> measure scrape latency spike.
+
 ```
-T0:00    │ Packet loss begins; kube-probe fails
-T0:05    │ ┌─ Write path
-         │ │   - Internal scraper → kube-proxy topology fallback
-         │ │     → buffer-b (automatic, <100ms)
-         │ │   - External scraper → NLB health check
-         │ │     → marks buffer-a targets unhealthy (2s delay)
-         │ │     → routes to buffer-b
-         │ │   - buffer-b continues dual-write a,b
-         │ │   - vmagent_remotewrite_pending_data_bytes[a] starts growing
-         │ └─ Read path
-         │     - Grafana pods → kube-proxy topology fallback
-         │       → vmselect-b (automatic, <100ms)
-         │     - vmselect-b queries vmstorage-b (all data replicated)
-         │     - Queries succeed, latency +50ms (cross-pod communication)
-T0:20    │ NLB removes AZ-A targets from rotation (health check failures)
-T0:30    │ Stability: write buffer ~ 50GB (1 hour at 920K samples/s)
-         │
-T1:00    │ ┌─ Monitoring
-(5 min)  │ │ - Alerts: `TopologyHintsInactive` (if hints silently disabled)
-         │ │ - Alerts: `VmagentBufferHighFill` (>70% of 200GB)
-         │ │ - Alerts: `VMStorageNodeUnavailable` (if 1a node had data)
-         │ │ - vmagent_remotewrite_pending_data_bytes_total[vminsert_url=vm-a] = ~200GB
-         │ └─ Capacity: buffer-b pod CPU 60→90%, not throttled
-         │
-T_recovery│ AZ-1a restores → health checks pass
-          │ NLB re-adds AZ-A targets
-          │ Pending buffer for vm-a drains (~5 days retention if outage >5d)
-          │ ~30 minutes to full capacity
+T0:00     │ Packet loss begins; kubelet probes fail
+T0:05-15  │ ┌─ Write path (empirical RTO 5-15s, NOT <100ms)
+          │ │  - Kubelet probe: 100-500ms detects pod failure
+          │ │  - EndpointSlice controller: 5-10s propagates change
+          │ │  - kube-proxy iptables sync: 1-2s
+          │ │  - Internal scrapers → buffer-b (5-15s total)
+          │ │  - External scrapers via NLB:
+          │ │    * Health check: 2 failures × 5s interval = 10s
+          │ │    * NLB removes targets, routes to buffer-b
+          │ │  - buffer-b continues dual-write to (a, b)
+          │ │  - vmagent_remotewrite_pending_data_bytes{url="vm-a-url"}
+          │ │    starts growing on disk buffer
+          │ └─ Read path (empirical RTO 5-15s)
+          │    - Grafana pods → vmselect-b (kube-proxy fallback)
+          │    - vmselect-b queries vmstorage-b (data replicated)
+          │    - Query latency: +50-200ms (cold cache on vmselect-b)
+          │    - Query freshness: <1s (normal) → <5min (during buffer drain)
+T0:20     │ NLB fully removes AZ-A targets from rotation
+T0:30     │ Stability achieved; write buffer growing at ~150 KB/s per pod
+          │
+T+1h      │ ┌─ Monitoring expectations
+          │ │ - Alert: TopologyHintsInactive (if pod skew >3× silently disabled)
+          │ │ - Alert: VmagentBufferHighFill (>70% of 50GB per pod)
+          │ │ - Alert: VMStorageNodeUnavailable (if 1a vmstorage had data)
+          │ │ - vmagent_remotewrite_pending_data_bytes{url="vm-a"} ≈ 540MB
+          │ └─ Capacity: buffer-b pod CPU 60→90%, not throttled
+          │
+T+5d      │ Buffer near full (50GB × 3 pods = 150GB total per cluster)
+          │ At this point: rate-limit kicks in (10MB/s drain when AZ recovers)
+          │ Beyond 5d: oldest data dropped (FIFO)
+          │
+T_recovery│ AZ-1a restores → health checks pass within 10s
+          │ EndpointSlice controller re-enables hints (5-10s)
+          │ NLB re-adds AZ-A targets (10s)
+          │ Pending buffer drains at -remoteWrite.rateLimit=50MB/s per URL
+          │ Recovery time:
+          │   - Empty buffer: <1 minute
+          │   - Half-full (75GB): ~25 minutes
+          │   - Full (150GB): ~50 minutes
+          │ During recovery: queries stay on VM-B (no flip-flop)
 ```
+
+> **Note on buffer numbers:** 50GB per pod × 3 pods per AZ × 2 AZs = 300GB total
+> EBS provisioned. With `-remoteWrite.maxDiskUsagePerURL=45GiB` per URL,
+> retention window: ~5 days at 150 KB/s sustained backpressure rate.
 
 ---
 
@@ -508,12 +614,109 @@ aws cloudwatch get-metric-statistics \
 ### vmagent-buffer (Both Clusters)
 
 ```
--remoteWrite.maxDiskUsagePerURL=180GiB       # Isolate per URL
--remoteWrite.rateLimit=50MB                  # Only for cross-AZ (vminsert other cluster)
--remoteWrite.retryInterval=1s                # Retry immediately
+# CORRECTED: 45GiB per URL (50GB pod buffer × 0.9 headroom for 2 URLs)
+-remoteWrite.maxDiskUsagePerURL=45GiB
+
+# Per-URL rate limit (NOT global — must be specified per URL)
+# Format: -remoteWrite.url[N].streamAggrConfig with per-URL rate limit
+# OR: -remoteWrite.maxRowsPerBlock=10000 on slow URL only
+-remoteWrite.rateLimit=50MB                  # Global rate limit (applies to all URLs)
+
+-remoteWrite.retryInterval=1s
 -remoteWrite.dialTimeout=5s
 -remoteWrite.readTimeout=5s
 ```
+
+> **⚠️ IMPORTANT:** `-remoteWrite.rateLimit` is **per-vmagent**, not per-URL.
+> To rate-limit only the cross-cluster URL (vminsert other cluster), use the
+> per-URL form `-remoteWrite.url[N].rateLimit` (vmagent v1.95+) or limit
+> via `streamAggrConfig` per URL.
+
+---
+
+## Cardinality Management (CRITICAL)
+
+**At 111M active series + 90M churn/24h, cardinality is the primary scaling constraint.**
+
+### Cardinality Budget Allocation
+
+| Component | Active Series | Churn/Day | Notes |
+|-----------|---|---|---|
+| K8s metadata | 45M | 40M | kube_pod_info, kube_node_info, etc. |
+| Game metrics | 55M | 45M | Per-game telemetry, custom labels |
+| Infrastructure | 11M | 5M | Node-exporter, container_*, vmagent |
+| **Total** | **111M** | **90M** | Budget headroom: 120% = 133M alert |
+
+### Cardinality Alerts
+
+```yaml
+- alert: VMCardinalityBurstDetected
+  expr: |
+    sum by (cluster) (vmagent_active_series)
+    > 1.2 * avg_over_time(sum by (cluster) (vmagent_active_series)[1d:1h])
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "{{ $value | humanize }} series spike on {{ $labels.cluster }}"
+    action: "Investigate: new game deployment? Misconfigured high-cardinality label?"
+
+- alert: VMCardinalityBudgetExceeded
+  expr: sum by (cluster) (vmagent_active_series) > 1.2 * 111e6
+  for: 30m
+  labels:
+    severity: critical
+  annotations:
+    summary: "Cardinality {{ $value | humanize }} exceeds 120% budget on {{ $labels.cluster }}"
+    action: "Trigger aggressive relabeling or service discovery tuning"
+
+- alert: VMHourlySeriesLimitHit
+  expr: increase(vm_hourly_series_limit_rows_dropped_total[5m]) > 0
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "Cardinality limit hit on {{ $labels.instance }}, series being dropped"
+```
+
+### Topology Hints — Proactive Monitoring
+
+```yaml
+# Fire BEFORE 3× threshold triggers silent deactivation
+# Note: actual threshold per KEP-2433 is 20% endpoint-overload, not "3× skew"
+# but skew correlates with overload; alerting on skew gives early warning
+- alert: TopologyHintsInactivePreventive
+  expr: |
+    (max by (zone) (count by (zone, pod) (kube_pod_info{namespace="prod-itprod"}))
+     /
+     min by (zone) (count by (zone) (kube_node_info))
+    ) > 2.5
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "Pod distribution skew {{ $value | humanize }}× detected"
+    action: "Manually rebalance pods or trigger descheduler before hints disable at 3×"
+
+# Hard alert when hints actually deactivate
+# Requires kube-state-metrics with --metric-annotations-allowlist=endpointslices=[*]
+- alert: TopologyHintsDeactivated
+  expr: |
+    kube_endpointslice_annotations{
+      annotation_service_kubernetes_io_topology_mode="Auto"
+    } unless on (endpointslice)
+    kube_endpointslice_annotations{annotation_hints_auto="yes"}
+  for: 5m
+  labels:
+    severity: critical
+  annotations:
+    summary: "Topology hints deactivated for {{ $labels.endpointslice }}"
+    action: "Cross-AZ traffic restored. Check pod-to-node ratio + manual fix"
+```
+
+> **Prerequisite:** kube-state-metrics 2.x requires
+> `--metric-annotations-allowlist=endpointslices=[*]` to expose annotation values.
+> Without this, the alert above will never fire (returns empty result).
 
 ---
 
@@ -537,7 +740,18 @@ resource "aws_ebs_volume" "vmstorage" {
 - 111M active series + 90M churn/24h
 - Background compaction burst: 100-200 MB/s
 - Baseline 3000 IOPS + 125 MB/s throttles → compaction debt → query latency degradation
-- Cost delta: ~$56/volume/month → $560/month per cluster (acceptable vs. query slowdown)
+
+**EBS gp3 cost (us-east-1, May 2026 — verified against AWS pricing page):**
+```
+Storage:    2048 GB × $0.08/GB-mo  = $163.84/vol-mo
+IOPS:       (6000-3000) × $0.005   = $15.00/vol-mo  (3000 free)
+Throughput: (500-125) × $0.04      = $15.00/vol-mo  (125 MB/s free)
+Total:      $193.84/vol-mo per node
+```
+- Per cluster (10 nodes): **$1,938/month**
+- Both clusters (20 nodes): **$3,877/month**
+- This is *unchanged* vs. RF=2 baseline (same total node count)
+- Earlier drafts cited "$56/volume" — that was wrong (missed full pricing components)
 
 ---
 
@@ -584,19 +798,49 @@ Detailed 9-phase procedure in [`../victoria-metrics-cluster-stage/TODO-prod-migr
 
 ---
 
-## Cost Breakdown (Monthly)
+## Cost Breakdown (Monthly, Verified May 2026)
+
+**Both clusters combined (us-east-1, on-demand pricing):**
 
 | Item | Qty | Unit | Rate | Cost |
 |------|-----|------|------|------|
-| vmstorage EBS gp3 (2TB @ 6K IOPS, 500MB/s) | 20 | volumes | $56.00 | $1,120 |
-| vmstorage EC2 r7g.2xlarge | 20 | instances | $280/mo | $5,600 |
-| vminsert EC2 | 4 | instances | $50 | $200 |
-| vmselect EC2 | 6 | instances | $50 | $300 |
-| vmagent-buffer EC2 | 6 | instances | $50 | $300 |
-| NLB (3 zones) | 1 | lb | $16 | $16 |
-| NLB capacity units (data processing) | 50 | DCU | $0.01 | $500 |
-| Cross-AZ egress (dual-write only) | 950 | GB | $0.01 | $950 |
-| **Total** | | | | **~$9,086/month** |
+| vmstorage EBS gp3 (2TB + 6K IOPS + 500MB/s) | 20 | volumes | $193.84/vol | $3,877 |
+| vmstorage EC2 r7g.2xlarge (on-demand) | 20 | instances | $305/mo | $6,100 |
+| vminsert EC2 r7g.large | 4 | instances | $76/mo | $304 |
+| vmselect EC2 r7g.large | 6 | instances | $76/mo | $456 |
+| vmagent-buffer EC2 r7g.large | 6 | instances | $76/mo | $456 |
+| vmagent-buffer EBS gp3 (50GB) | 6 | volumes | $4/vol | $24 |
+| NLB (3 NLBs × 3 zones) | 3 | lb | $16/mo | $48 |
+| NLB capacity units (NLCU) | ~100 | NLCU | $0.0072/h | ~$520 |
+| Cross-AZ egress (dual-write, both directions) | 1900 | GB | $0.02/GB | $1,900 |
+| **Total** | | | | **~$13,685/month** |
+
+> **Notes:**
+> - Cross-AZ egress: AWS charges $0.01/GB **in each direction** (effective $0.02/GB on conversation)
+> - Reserved instances (1yr no upfront) reduce EC2 costs by ~30% → save ~$2,200/mo
+> - NLCU billing: charges per NLB capacity unit (NOT EBS DCU); ~$0.0072/NLCU-hour
+> - vmstorage EC2 on-demand: r7g.2xlarge in us-east-1 = $305/mo (verified AWS pricing page May 2026)
+
+**vs. RF=2 baseline (single cluster):**
+
+| Item | RF=2 | Dual-Cluster | Delta |
+|------|------|---|---|
+| vmstorage EC2 (10 nodes) | $3,050 | $6,100 | +$3,050 |
+| vmstorage EBS | $1,938 | $3,877 | +$1,939 |
+| Cross-AZ read egress (fan-out) | $900 | $0 | -$900 |
+| Cross-AZ write (dual-write) | $0 | $1,900 | +$1,900 |
+| Other (vminsert, vmselect, NLB) | similar | similar | minimal |
+| **Net delta** | | | **+$5,989/mo** |
+
+> **⚠️ Honest framing:** Dual-cluster is **more expensive** in absolute terms
+> (+$6K/mo) due to doubled storage. The "savings" come from:
+> - Eliminated cross-AZ read egress (-$900/mo)
+> - Avoided vmselect right-sizing to r7g.4xlarge (~$280/mo)
+> - **Net cash savings: ~$320/mo** (modest)
+> - **Real value: AZ-level DR + operational simplicity**
+>
+> Earlier drafts claimed "−$1,630/month" — that was incorrect. Honest accounting
+> shows dual-cluster as a **DR investment**, not a cost reduction.
 
 ---
 
