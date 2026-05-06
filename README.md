@@ -46,6 +46,11 @@ I also write **NDA-safe custom tooling** (exporters/services) to close gaps in A
 ## Technical artifacts
 
 - Case studies:
+  - **Victoria Metrics Multi-AZ Series** (new):
+    - `case-studies/README-victoria-metrics-series.md` — overview & reading guide
+    - `case-studies/victoria-metrics-multiaz-isolation.md` — dual-cluster architecture for DR
+    - `case-studies/prometheus-scraper-locality.md` — zone-aware scraper design (deferred)
+    - `case-studies/victoria-metrics-technical-reference.md` — deployment configs & runbooks
   - `case-studies/01-finops-automation.md`
   - `case-studies/02-zero-trust-publishing.md`
   - `case-studies/03-self-service-provisioning.md`
